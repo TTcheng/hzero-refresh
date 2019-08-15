@@ -1,6 +1,9 @@
 package me.wcc.ui;
 
 import java.net.URL;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import com.jfoenix.controls.JFXButton;
@@ -32,6 +35,8 @@ public class Controller implements Initializable {
     private HttpClient httpClient;
     private String username;
     private String password;
+    private String serviceName;
+    private String serviceVersion;
     private String authUrl;
 
     @FXML
@@ -75,7 +80,7 @@ public class Controller implements Initializable {
                 return;
             }
             if (checkAndUpdate()) {
-                RefreshProperties.update(authUrl, username, password);
+                RefreshProperties.update(authUrl, username, password, serviceName, serviceVersion);
             }
         }
     }
@@ -89,10 +94,10 @@ public class Controller implements Initializable {
                 return;
             }
             boolean update = checkAndUpdate();
-            if (StringUtils.isAnyBlank(authUrl, username, password)){
+            if (StringUtils.isAnyBlank(authUrl, username, password)) {
                 return;
             }
-            if (!update && null != httpClient){
+            if (!update && null != httpClient) {
                 doRefreshAll();
                 return;
             }
@@ -120,14 +125,23 @@ public class Controller implements Initializable {
             alert("用户名和密码不能为空！");
             return false;
         }
+        String service = serviceNameField.getText();
+        String version = serviceVersionField.getText();
+        if (StringUtils.isBlank(service) || StringUtils.isBlank(version)) {
+            alert("请输入服务名称和版本！");
+            return false;
+        }
         if (Objects.equals(authUrl, inputUrl) && Objects.equals(username, inputUsername)
-                && Objects.equals(password, inputPassword)) {
+                && Objects.equals(password, inputPassword) && Objects.equals(serviceName, service)
+                && Objects.equals(serviceVersion, version)) {
             // 没有改变
             return false;
         }
         this.authUrl = inputUrl;
         this.password = inputPassword;
         this.username = inputUsername;
+        this.serviceName = service;
+        this.serviceVersion = version;
         return true;
     }
 
@@ -145,21 +159,18 @@ public class Controller implements Initializable {
     private static final String ROUTE_REFRESH = "/hcnf/v1/monitor/refresh-route";
     private static final String PERMISSION_REFRESH = "/iam/v1/permission/fresh/%s?metaVersion=%s";
 
+    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private void doRefreshAll() {
-        String serviceName = serviceNameField.getText();
-        String version = serviceVersionField.getText();
-        if (StringUtils.isBlank(serviceName) || StringUtils.isBlank(version)) {
-            alert("请输入服务名称和版本！");
-            return;
-        }
-        showArea.clear();
-        ResponseEntity swagger = httpClient.post(String.format(SWAGGER_REFRESH, serviceName, version));
+        String timeString = Instant.now().atZone(ZoneId.systemDefault()).format(dateTimeFormatter);
+        setShowInfo("==========" + timeString + "==========\n");
+        ResponseEntity swagger = httpClient.post(String.format(SWAGGER_REFRESH, serviceName, serviceVersion));
         appendShowInfo(swagger.toString());
         appendShowInfo("=====================================");
         ResponseEntity route = httpClient.post(ROUTE_REFRESH);
         appendShowInfo(route.toString());
         appendShowInfo("=====================================");
-        ResponseEntity permission = httpClient.post(String.format(PERMISSION_REFRESH, serviceName, version));
+        ResponseEntity permission = httpClient.post(String.format(PERMISSION_REFRESH, serviceName, serviceVersion));
         appendShowInfo(permission.toString());
     }
 
@@ -183,6 +194,8 @@ public class Controller implements Initializable {
         String tokenUrl = properties.get(RefreshProperties.KEY_TOKEN_URL);
         String storedUsername = properties.get(RefreshProperties.KEY_USERNAME);
         String storedPassword = properties.get(RefreshProperties.KEY_PASSWORD);
+        String storedService = properties.get(RefreshProperties.KEY_SERVICE);
+        String storedVersion = properties.get(RefreshProperties.KEY_VERSION);
 
         if (StringUtils.isNotBlank(tokenUrl)) {
             authUrl = tokenUrl;
@@ -195,6 +208,12 @@ public class Controller implements Initializable {
         if (StringUtils.isNotBlank(storedUsername)) {
             username = storedUsername;
             usernameField.setText(storedUsername);
+        }
+        if (StringUtils.isNotBlank(storedService)) {
+            serviceNameField.setText(storedService);
+        }
+        if (StringUtils.isNotBlank(storedVersion)) {
+            serviceVersionField.setText(storedVersion);
         }
     }
 }

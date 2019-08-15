@@ -6,11 +6,24 @@ import me.wcc.http.auth.TokenHolder
 import me.wcc.util.RefreshProperties
 import spock.lang.Specification
 
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
 
 /**
  * @author chuncheng.wang@hand-china.com 2019/8/3 下午5:39
  */
 class CommonSpec extends Specification {
+
+    void "test datetime"(){
+         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        def dateTime = Instant.now().atZone(ZoneId.systemDefault())
+        def timeString = dateTime.format(dateTimeFormatter)
+        expect:
+        println(timeString)
+    }
 
     void "test Properties"(){
         when:

@@ -20,6 +20,8 @@ public class RefreshProperties {
     public static final String KEY_USERNAME = "username";
     public static final String KEY_PASSWORD = "password";
     public static final String KEY_TOKEN_URL = "tokenUrl";
+    public static final String KEY_SERVICE = "service";
+    public static final String KEY_VERSION = "version";
 
     public static Map<String, String> read() {
         InputStream in = null;
@@ -59,11 +61,12 @@ public class RefreshProperties {
 
     public static void update(Map<String, String> propertiesMap) {
         if (propertiesMap.size() > 0) {
-            update(propertiesMap.get(KEY_TOKEN_URL), propertiesMap.get(KEY_USERNAME), propertiesMap.get(KEY_PASSWORD));
+            update(propertiesMap.get(KEY_TOKEN_URL), propertiesMap.get(KEY_USERNAME), propertiesMap.get(KEY_PASSWORD),
+                    propertiesMap.get(KEY_SERVICE), propertiesMap.get(KEY_VERSION));
         }
     }
 
-    public static void update(String authUrl, String username, String password) {
+    public static void update(String authUrl, String username, String password, String service, String version) {
         if (StringUtils.isAllBlank(authUrl, username, password)) {
             return;
         }
@@ -76,6 +79,12 @@ public class RefreshProperties {
         }
         if (StringUtils.isNotBlank(password)) {
             old.put(KEY_PASSWORD, password);
+        }
+        if (StringUtils.isNotBlank(service)) {
+            old.put(KEY_SERVICE, service);
+        }
+        if (StringUtils.isNotBlank(version)) {
+            old.put(KEY_VERSION, version);
         }
         try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(FILE_PATH))) {
             Properties properties = new Properties();
